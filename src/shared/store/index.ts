@@ -6,6 +6,27 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { Store } from './types';
 
+/**
+ * Создает типизированный store с devtools
+ */
+export function createTypedStore<TState, TActions>(
+  name: string,
+  initialState: TState,
+  actions: (set: (partial: Partial<TState & TActions>) => void) => TActions
+) {
+  return create<TState & TActions>()(
+    devtools(
+      (set) => ({
+        ...initialState,
+        ...actions(set),
+      }),
+      {
+        name,
+      }
+    )
+  );
+}
+
 export const useStore = create<Store>()(
   devtools(
     (set) => ({

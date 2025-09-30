@@ -4,3 +4,5 @@
 
 export * from './store';
 export * from './lib';
+export * from './hooks';
+export * from './providers';
