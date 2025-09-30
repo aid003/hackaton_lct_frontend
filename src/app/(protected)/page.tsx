@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { LogoutButton } from "@/features";
@@ -14,11 +14,14 @@ export default function Home() {
         <ThemeToggle />
         <LogoutButton />
       </div>
-      
+
       {/* Информация о пользователе */}
       <div className="absolute top-4 left-4 bg-card border rounded-lg px-4 py-2 shadow-sm">
         <p className="text-sm text-muted-foreground">
-          Авторизован как: <span className="font-semibold text-foreground">{user?.username || 'Гость'}</span>
+          Авторизован как:{" "}
+          <span className="font-semibold text-foreground">
+            {user?.username || "Гость"}
+          </span>
         </p>
       </div>
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
@@ -39,24 +42,29 @@ export default function Home() {
             <li className="tracking-[-.01em]">
               ✅ Middleware защищает маршруты
             </li>
-            <li className="tracking-[-.01em]">
-              ✅ Bcrypt хеширование паролей
-            </li>
+            <li className="tracking-[-.01em]">✅ Bcrypt хеширование паролей</li>
             <li className="tracking-[-.01em]">
               ✅ TypeScript строгая типизация
             </li>
           </ol>
-          
+
           <div className="mt-6 p-4 bg-muted rounded-md">
-            <p className="text-sm font-semibold mb-2">📝 Данные для входа (тест):</p>
+            <p className="text-sm font-semibold mb-2">
+              📝 Данные для входа (тест):
+            </p>
             <code className="text-xs block">
-              Username: admin<br />
+              Username: admin
+              <br />
               Password: admin123
             </code>
           </div>
-          
+
           <p className="mt-4 text-sm text-muted-foreground">
-            Смотрите <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded">AUTH_SETUP.md</code> для подробной информации
+            Смотрите{" "}
+            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded">
+              AUTH_SETUP.md
+            </code>{" "}
+            для подробной информации
           </p>
         </div>
 
