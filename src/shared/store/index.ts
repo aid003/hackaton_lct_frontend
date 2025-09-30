@@ -49,3 +49,4 @@ export const useStore = create<Store>()(
 export type { Store, StoreActions, BaseState } from './types';
 export * from './hooks';
 export * from './selectors';
+export * from './user';

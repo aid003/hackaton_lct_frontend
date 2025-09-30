@@ -4,3 +4,4 @@
 
 export { StoreProvider } from './store-provider';
 export { ThemeProvider } from './theme-provider';
+export { AuthSyncProvider } from './auth-sync-provider';

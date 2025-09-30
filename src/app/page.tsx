@@ -1,12 +1,25 @@
-import { Button } from "@/shared/components/ui/button";
+'use client';
+
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
+import { LogoutButton } from "@/features";
+import { useUser } from "@/shared";
 import Image from "next/image";
 
 export default function Home() {
+  const user = useUser();
+
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 flex gap-2">
         <ThemeToggle />
+        <LogoutButton />
+      </div>
+      
+      {/* Информация о пользователе */}
+      <div className="absolute top-4 left-4 bg-card border rounded-lg px-4 py-2 shadow-sm">
+        <p className="text-sm text-muted-foreground">
+          Авторизован как: <span className="font-semibold text-foreground">{user?.username || 'Гость'}</span>
+        </p>
       </div>
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
         <Image
@@ -17,19 +30,35 @@ export default function Home() {
           height={38}
           priority
         />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
+        <div className="bg-card border rounded-lg p-6 shadow-lg max-w-2xl">
+          <h2 className="text-2xl font-bold mb-4">🎉 Авторизация настроена!</h2>
+          <ol className="font-mono list-inside list-decimal text-sm/6 space-y-2">
+            <li className="tracking-[-.01em]">
+              ✅ NextAuth v5 с CredentialsProvider
+            </li>
+            <li className="tracking-[-.01em]">
+              ✅ Middleware защищает маршруты
+            </li>
+            <li className="tracking-[-.01em]">
+              ✅ Bcrypt хеширование паролей
+            </li>
+            <li className="tracking-[-.01em]">
+              ✅ TypeScript строгая типизация
+            </li>
+          </ol>
+          
+          <div className="mt-6 p-4 bg-muted rounded-md">
+            <p className="text-sm font-semibold mb-2">📝 Данные для входа (тест):</p>
+            <code className="text-xs block">
+              Username: admin<br />
+              Password: admin123
             </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-          <Button>Click me</Button>
-        </ol>
+          </div>
+          
+          <p className="mt-4 text-sm text-muted-foreground">
+            Смотрите <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded">AUTH_SETUP.md</code> для подробной информации
+          </p>
+        </div>
 
         <div className="flex gap-4 items-center flex-col sm:flex-row">
           <a
