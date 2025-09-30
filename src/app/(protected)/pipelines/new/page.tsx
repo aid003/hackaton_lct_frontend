@@ -97,10 +97,7 @@ export default function NewPipelinePage() {
       );
     }
   }, [
-    wizard.sourceType,
-    wizard.source,
-    wizard.resetPreview,
-    wizard.setPreview,
+    wizard,
     selectedFile,
   ]);
 
@@ -188,7 +185,7 @@ export default function NewPipelinePage() {
     return () => {
       unsubscribes.forEach((u) => u());
     };
-  }, [ws, wizard.analysis.jobId, wizard.setAnalysis]);
+  }, [ws, wizard]);
 
   const startAnalyze = useCallback(async () => {
     setAnalyzeError("");
@@ -207,7 +204,7 @@ export default function NewPipelinePage() {
         e instanceof Error ? e.message : "Не удалось запустить анализ"
       );
     }
-  }, [ws, wizard.preview, wizard.setAnalysis]);
+  }, [ws, wizard]);
 
   const recommendedTarget: TargetSystem | undefined =
     wizard.analysis.result?.recommendation.target ??

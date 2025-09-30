@@ -4,13 +4,11 @@ import { useRef } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import { Separator } from "@/shared/components/ui/separator";
 import { Badge } from "@/shared/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
 import { FileSpreadsheet, Braces, FileCode2, Database } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/components/ui/alert";
 import type { PreviewData, SourceConfig, SourceType } from "@/shared/store/pipelineWizard";
-import { safeErrorMessage } from "@/shared/api/http";
 
 export function Step1Source(props: {
   sourceType: SourceType;
