@@ -25,6 +25,6 @@ export const useStore = create<Store>()(
 );
 
 // Экспорт типов и хуков
-export type { Store, StoreState, StoreActions, BaseState } from './types';
+export type { Store, StoreActions, BaseState } from './types';
 export * from './hooks';
 export * from './selectors';

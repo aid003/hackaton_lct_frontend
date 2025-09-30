@@ -7,14 +7,10 @@ export interface BaseState {
   error: string | null;
 }
 
-export interface StoreState extends BaseState {
-  // Базовое состояние приложения
-}
-
 export interface StoreActions {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
 }
 
-export type Store = StoreState & StoreActions;
+export type Store = BaseState & StoreActions;
