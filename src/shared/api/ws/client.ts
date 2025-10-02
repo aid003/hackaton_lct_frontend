@@ -5,14 +5,14 @@ type EventType = WSEvent["type"];
 type EventPayloadMap = {
   connected: void;
   queued: Extract<WSEvent, { type: "queued" }>["data"];
-  started: Extract<WSEvent, { type: "started" }> ["data"];
-  progress: Extract<WSEvent, { type: "progress" }> ["data"];
-  log: Extract<WSEvent, { type: "log" }> ["data"];
-  done: Extract<WSEvent, { type: "done" }> ["data"];
-  error: Extract<WSEvent, { type: "error" }> ["data"];
-  cancelled: Extract<WSEvent, { type: "cancelled" }> ["data"];
-  paused: Extract<WSEvent, { type: "paused" }> ["data"];
-  resumed: Extract<WSEvent, { type: "resumed" }> ["data"];
+  started: Extract<WSEvent, { type: "started" }>["data"];
+  progress: Extract<WSEvent, { type: "progress" }>["data"];
+  log: Extract<WSEvent, { type: "log" }>["data"];
+  done: Extract<WSEvent, { type: "done" }>["data"];
+  error: Extract<WSEvent, { type: "error" }>["data"];
+  cancelled: Extract<WSEvent, { type: "cancelled" }>["data"];
+  paused: Extract<WSEvent, { type: "paused" }>["data"];
+  resumed: Extract<WSEvent, { type: "resumed" }>["data"];
 };
 
 type Handler<K extends EventType> = (payload: EventPayloadMap[K]) => void;
@@ -93,14 +93,15 @@ export function createWS(url: string, token?: string): WSClient {
 
   const startHeartbeat = () => {
     stopHeartbeat();
-    if (typeof window === "undefined") return;
-    heartbeatTimer = window.setInterval(() => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        try {
-          ws.send("ping");
-        } catch {}
-      }
-    }, 30_000);
+    // Heartbeat отключен - сервер не поддерживает ping команды
+    // if (typeof window === "undefined") return;
+    // heartbeatTimer = window.setInterval(() => {
+    //   if (ws && ws.readyState === WebSocket.OPEN) {
+    //     try {
+    //       ws.send(JSON.stringify({ type: "ping" }));
+    //     } catch { }
+    //   }
+    // }, 30_000);
   };
 
   const stopHeartbeat = () => {
@@ -136,13 +137,16 @@ export function createWS(url: string, token?: string): WSClient {
 
     ws.onmessage = (evt) => {
       const data = evt.data;
-      if (typeof data === "string" && (data === "pong" || data === "ping")) {
-        return;
-      }
       try {
         const parsed: unknown = JSON.parse(String(data));
-        const maybe = parsed as { type?: EventType; data?: unknown } | null;
+        const maybe = parsed as { type?: EventType | "ping" | "pong"; data?: unknown } | null;
         if (!maybe || typeof maybe !== "object" || typeof maybe.type !== "string") return;
+
+        // Обработка ping/pong сообщений
+        if (maybe.type === "ping" || maybe.type === "pong") {
+          return;
+        }
+
         const type = maybe.type as EventType;
         if (type === "connected") {
           emitter.emit("connected", undefined);
@@ -184,7 +188,7 @@ export function createWS(url: string, token?: string): WSClient {
     shouldReconnect = false;
     stopHeartbeat();
     if (ws) {
-      try { ws.close(); } catch {}
+      try { ws.close(); } catch { }
     }
     ws = null;
     connecting = false;

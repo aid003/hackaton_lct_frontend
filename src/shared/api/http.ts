@@ -6,12 +6,20 @@ export interface JsonRequestInit extends Omit<RequestInit, "body"> {
   body?: unknown;
 }
 
+function getApiBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_API_URL || '';
+}
+
 export async function jsonFetch<TResponse>(url: string, init?: JsonRequestInit): Promise<TResponse> {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     ...(init?.headers ?? {}),
   };
-  const res = await fetch(url, {
+  
+  // Если URL начинается с /, добавляем базовый URL API
+  const fullUrl = url.startsWith('/') ? `${getApiBaseUrl()}${url}` : url;
+  
+  const res = await fetch(fullUrl, {
     ...init,
     headers,
     body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,

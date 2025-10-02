@@ -140,15 +140,26 @@ export function Step1Source(props: {
             <Badge variant="secondary">Колонок: {preview.columns.length}</Badge>
             <Badge variant="secondary">Строк в сэмпле: {preview.rowCount}</Badge>
           </div>
+          
+          {/* Отладочная информация */}
+          {preview.columns.length > 0 && preview.columns.every(c => !c.name) && (
+            <Alert>
+              <AlertTitle>⚠️ Отладочная информация</AlertTitle>
+              <AlertDescription>
+                Колонки получены, но их имена пустые. Проверьте консоль для детальной информации.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="border rounded-md">
             <Table>
               <TableHeader>
                 <TableRow>
-                  {preview.columns.map((c) => (
-                    <TableHead key={c.name}>
+                  {preview.columns.map((c, index) => (
+                    <TableHead key={c.name || `col-${index}`}>
                       <div className="flex items-center gap-2">
-                        <span>{c.name}</span>
-                        <Badge variant="outline">{c.type}</Badge>
+                        <span>{c.name || `Column ${index + 1}`}</span>
+                        <Badge variant="outline">{c.type || 'unknown'}</Badge>
                       </div>
                     </TableHead>
                   ))}
@@ -156,9 +167,11 @@ export function Step1Source(props: {
               </TableHeader>
               <TableBody>
                 {preview.rows.map((r, idx) => (
-                  <TableRow key={idx}>
-                    {preview.columns.map((c) => (
-                      <TableCell key={c.name}>{formatCell(r[c.name])}</TableCell>
+                  <TableRow key={`row-${idx}`}>
+                    {preview.columns.map((c, colIndex) => (
+                      <TableCell key={`${idx}-${c.name || colIndex}`}>
+                        {formatCell(r[c.name || `col-${colIndex}`])}
+                      </TableCell>
                     ))}
                   </TableRow>
                 ))}

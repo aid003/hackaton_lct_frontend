@@ -34,6 +34,42 @@ import {
 } from "@/shared/store/pipelineWizard";
 import { useWS } from "@/shared/api/ws/provider";
 import type { WSEvent, WSCommand } from "@/shared/api/ws/events";
+import { logWSEvent, logWSCommand } from "@/shared/api/ws/events";
+
+// Детальное логирование для страницы пайплайна
+const logPipelineData = (data: unknown, context: string) => {
+  console.group(`📋 [PipelinePage] ${context}`);
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('Data:', JSON.stringify(data, null, 2));
+
+  if (data && typeof data === 'object') {
+    const dataObj = data as Record<string, unknown>;
+
+    if (dataObj.wizard) {
+      const wizard = dataObj.wizard as Record<string, unknown>;
+      console.log('Wizard step:', wizard.step);
+      console.log('Wizard dirty:', wizard.dirty);
+      console.log('Wizard sourceType:', wizard.sourceType);
+      console.log('Wizard has preview:', !!wizard.preview);
+      const analysis = wizard.analysis as Record<string, unknown>;
+      console.log('Wizard analysis status:', analysis?.status);
+      console.log('Wizard has result:', !!analysis?.result);
+    }
+
+    if (dataObj.selectedFile) {
+      const file = dataObj.selectedFile as Record<string, unknown>;
+      console.log('Selected file name:', file.name);
+      console.log('Selected file size:', file.size, 'bytes');
+      console.log('Selected file type:', file.type);
+    }
+
+    if (dataObj.error) {
+      console.log('Error message:', dataObj.error);
+    }
+  }
+
+  console.groupEnd();
+};
 
 type PreviewResponse = PreviewData;
 
@@ -66,6 +102,20 @@ export default function NewPipelinePage() {
   }, [wizard.dirty]);
 
   const handleTestPreview = useCallback(async () => {
+    logPipelineData({
+      wizard: {
+        step: wizard.step,
+        sourceType: wizard.sourceType,
+        source: wizard.source,
+        hasPreview: !!wizard.preview
+      },
+      selectedFile: selectedFile ? {
+        name: selectedFile.name,
+        size: selectedFile.size,
+        type: selectedFile.type
+      } : null
+    }, 'Starting preview test');
+
     setError("");
     wizard.resetPreview();
     try {
@@ -77,24 +127,63 @@ export default function NewPipelinePage() {
         const form = new FormData();
         form.append("file", selectedFile);
         form.append("fileType", wizard.sourceType);
-        const res = await fetch("/api/preview", { method: "POST", body: form });
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+        logPipelineData({
+          apiUrl,
+          fileType: wizard.sourceType,
+          fileName: selectedFile.name,
+          fileSize: selectedFile.size
+        }, 'Sending file preview request');
+
+        const res = await fetch(`${apiUrl}/api/preview`, { method: "POST", body: form });
         if (!res.ok) {
           const msg = await safeErrorMessage(res);
           throw new Error(msg);
         }
         data = (await res.json()) as PreviewResponse;
       } else {
+        logPipelineData({
+          sourceType: wizard.sourceType,
+          source: wizard.source
+        }, 'Sending database preview request');
+
         data = await apiPreview({
           sourceType: wizard.sourceType,
           source: wizard.source,
         });
       }
+
+      // Детальное логирование для отладки пустых колонок
+      console.group('🔍 [DEBUG] Preview data analysis');
+      console.log('Raw data:', data);
+      console.log('Columns array:', data.columns);
+      console.log('Columns length:', data.columns.length);
+      data.columns.forEach((col, index) => {
+        console.log(`Column ${index}:`, col);
+        console.log(`Column ${index} name:`, col.name);
+        console.log(`Column ${index} type:`, col.type);
+      });
+      console.groupEnd();
+
+      logPipelineData({
+        previewData: {
+          rowCount: data.rowCount,
+          columnsCount: data.columns.length,
+          columns: data.columns.map(c => ({ name: c.name, type: c.type }))
+        }
+      }, 'Preview data received');
+
       wizard.setPreview(data);
       toast.success("Предпросмотр получен");
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Не удалось получить предпросмотр"
-      );
+      const errorMessage = e instanceof Error ? e.message : "Не удалось получить предпросмотр";
+      logPipelineData({
+        error: errorMessage,
+        errorObject: e
+      }, 'Preview error occurred');
+
+      setError(errorMessage);
     }
   }, [
     wizard,
@@ -105,7 +194,15 @@ export default function NewPipelinePage() {
   useEffect(() => {
     const unsubscribes: Array<() => void> = [];
     const jobId = wizard.analysis.jobId;
+
+    logPipelineData({
+      jobId,
+      hasJobId: !!jobId,
+      wsStatus: ws.status
+    }, 'Setting up WebSocket handlers');
+
     if (!jobId) return;
+
     const withId = (data: unknown): boolean => {
       const d = data as { id?: string; scope?: string } | undefined;
       return (
@@ -114,29 +211,47 @@ export default function NewPipelinePage() {
         (d.scope === "analyze" || d.scope === undefined)
       );
     };
+
     unsubscribes.push(
       ws.on("queued", (d) => {
-        if (withId(d))
+        logWSEvent("queued", d, "WebSocket queued event");
+        if (withId(d)) {
+          logPipelineData({ jobId, eventData: d }, 'Processing queued event');
           wizard.setAnalysis((prev) => ({
             ...prev,
             status: "queued",
             message: undefined,
           }));
+        }
       })
     );
+
     unsubscribes.push(
       ws.on("started", (d) => {
-        if (withId(d))
+        logWSEvent("started", d, "WebSocket started event");
+        if (withId(d)) {
+          logPipelineData({ jobId, eventData: d }, 'Processing started event');
           wizard.setAnalysis((prev) => ({
             ...prev,
             status: "started",
             message: undefined,
           }));
+        }
       })
     );
+
     unsubscribes.push(
       ws.on("progress", (d) => {
-        if (withId(d))
+        logWSEvent("progress", d, "WebSocket progress event");
+        if (withId(d)) {
+          logPipelineData({
+            jobId,
+            eventData: d,
+            progress: d.percent,
+            stage: d.stage,
+            message: d.message
+          }, 'Processing progress event');
+
           wizard.setAnalysis((prev) => ({
             ...prev,
             status: "progress",
@@ -144,11 +259,20 @@ export default function NewPipelinePage() {
             stage: d.stage,
             message: d.message,
           }));
+        }
       })
     );
+
     unsubscribes.push(
       ws.on("error", (d) => {
+        logWSEvent("error", d, "WebSocket error event");
         if (withId(d)) {
+          logPipelineData({
+            jobId,
+            eventData: d,
+            errorReason: d.reason
+          }, 'Processing error event');
+
           wizard.setAnalysis((prev) => ({
             ...prev,
             status: "error",
@@ -159,19 +283,29 @@ export default function NewPipelinePage() {
         }
       })
     );
+
     unsubscribes.push(
       ws.on("done", (d) => {
+        logWSEvent("done", d, "WebSocket done event");
         const dd = d as Extract<WSEvent, { type: "done" }>["data"]; // narrow
         if (!withId(dd)) return;
         if (dd.scope === "analyze") {
+          logPipelineData({
+            jobId,
+            eventData: dd,
+            hasPayload: !!dd.payload,
+            recommendation: dd.payload?.recommendation,
+            ddlKeys: dd.payload?.ddl ? Object.keys(dd.payload.ddl) : []
+          }, 'Processing done event');
+
           wizard.setAnalysis((prev) => ({
             ...prev,
             status: "done",
             result: dd.payload
               ? {
-                  recommendation: dd.payload.recommendation,
-                  ddl: dd.payload.ddl,
-                }
+                recommendation: dd.payload.recommendation,
+                ddl: dd.payload.ddl,
+              }
               : prev.result,
             editedDdl: dd.payload ? { ...dd.payload.ddl } : prev.editedDdl,
             activeTarget: dd.payload
@@ -182,27 +316,52 @@ export default function NewPipelinePage() {
         }
       })
     );
+
     return () => {
+      logPipelineData({ jobId }, 'Cleaning up WebSocket handlers');
       unsubscribes.forEach((u) => u());
     };
   }, [ws, wizard]);
 
   const startAnalyze = useCallback(async () => {
+    logPipelineData({
+      preview: wizard.preview ? {
+        rowCount: wizard.preview.rowCount,
+        columnsCount: wizard.preview.columns.length,
+        columns: wizard.preview.columns.map(c => ({ name: c.name, type: c.type }))
+      } : null,
+      hasPreview: !!wizard.preview
+    }, 'Starting analysis');
+
     setAnalyzeError("");
     try {
       const data = await apiAnalyzeStart({ preview: wizard.preview! });
       const jobId = data.job_id;
+
+      logPipelineData({
+        jobId,
+        responseData: data
+      }, 'Analysis started, received job ID');
+
       wizard.setAnalysis((prev) => ({ ...prev, status: "queued", jobId }));
+
       // subscribe via WS
       const cmd: WSCommand = {
         type: "subscribe",
         data: { topic: "analyze", id: jobId },
       };
+
+      logWSCommand("subscribe", cmd.data, "Sending WebSocket subscribe command");
       ws.send(cmd);
+
     } catch (e) {
-      setAnalyzeError(
-        e instanceof Error ? e.message : "Не удалось запустить анализ"
-      );
+      const errorMessage = e instanceof Error ? e.message : "Не удалось запустить анализ";
+      logPipelineData({
+        error: errorMessage,
+        errorObject: e
+      }, 'Analysis start error');
+
+      setAnalyzeError(errorMessage);
     }
   }, [ws, wizard]);
 

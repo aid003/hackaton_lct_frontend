@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
+    "dev": "NODE_OPTIONS='--max-old-space-size=8192' next dev --turbopack",
+    "build": "NODE_OPTIONS='--max-old-space-size=8192' next build --turbopack",
+    "start": "NODE_OPTIONS='--max-old-space-size=8192' next start",
+    "start:large-files": "NODE_OPTIONS='--max-old-space-size=8192 --max-http-header-size=80000' next start",
     "lint": "eslint"
   },
   "dependencies": {

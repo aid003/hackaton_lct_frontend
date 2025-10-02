@@ -29,4 +29,6 @@ export default auth((req) => {
 
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
+  // Настройки для больших файлов
+  maxDuration: 1000, // 1000 секунд
 };
